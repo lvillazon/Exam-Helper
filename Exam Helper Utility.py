@@ -290,7 +290,7 @@ def print_solutions(for_real = False, lower=0, upper=9999):
         if os.path.exists(completed_folder):
 
             # get a list of all .py files in COMPLETED CODING
-            completed_files = [f for f in os.listdir(completed_folder) if '.py' in f]  # TODO should this look for all files?
+            completed_files = [f for f in os.listdir(completed_folder) if '.py' in f.lower()]  # TODO should this look for all files?
 
             # process all the files for a single student into one file
 #            combined_filename = join_path(completed_folder, candidate_folder, ".txt")
