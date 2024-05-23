@@ -322,6 +322,71 @@ def print_solutions(for_real = False, lower=0, upper=9999):
                 
         folder_number += 1
 
+# check that the COMPLETED folders look ok
+def check_completed():
+    # check each COMPLETED CODING folder looks correct after the exam
+    # 1. Is there a solution file for each Q, containing Q01, Q02 etc?
+    # 2. Is each file larger (in bytes) than the corresponding question file in STUDENT_CODING?
+    # 3. Is each file different from the template file in MASTER
+    # If any of these checks fail, output a mesage to highlight the problem
+    fail_count = 0
+    folder_number = 1
+    for i in range(0, len(raw_list), 2):
+        errors = []
+
+        desktop_path = get_desktop_path(folder_number)
+        candidate_folder = build_candidate_folder_name(raw_list[i], raw_list[i+1])
+        completed_folder = join_path(desktop_path, candidate_folder, "COMPLETED CODING")
+        question_folder = join_path(desktop_path, candidate_folder, "STUDENT CODING")
+        master_folder = master_folder = join_path(join_path(root, master_folder_name),"STUDENT CODING")
+
+        if os.path.exists(completed_folder) == False:
+            errors.append("No COMPLETED CODING folder " + raw_list[i] + raw_list[i+1])
+        else:
+            
+            # get a list of all .py files in COMPLETED CODING
+            completed_files = [f for f in os.listdir(completed_folder) if '.py' in f.lower()]
+
+            # TEST 1: Is there 1 file per Q with the correct name?
+            for q_number in "123456":  # questions are numbered 1 - 6
+                find_this_file = False
+                for solution_file in completed_files:
+                    if "Q0"+q_number in solution_file:
+                        find_this_file = True
+
+                        # TEST 2: compare with the corresponding question file
+                        # to check they haven't saved their answer in the STUDENT CODING folder
+                        solution_size = os.path.getsize(join_path(completed_folder, solution_file))
+                        question_path = join_path(master_folder, "Q0"+q_number+".py")
+                        if os.path.exists(question_path):
+                            question_size = os.path.getsize(question_path)
+                            if question_size == solution_size:
+                                errors.append(solution_file + " may be identical to the question file - check STUDENT CODING")
+                            elif question_size - solution_size > 50:  # allow a small margin for removing comments
+                                errors.append(solution_file + " smaller than the question file - check STUDENT CODING")
+                        else:
+                            errors.append("Cant find " + question_path)
+                            #errors.append("No question file for Q"+str(q_number)+" - check STUDENT FOLDER")
+                        
+                        break;  # only need to find one file for each question number
+                if find_this_file == False:  # at least one file is incorrectly named
+                    errors.append("Missing Q0"+str(q_number))
+                
+        if errors:
+            fail_count +=1
+            print("ALERT for", completed_folder)
+            for e in errors:
+                print("    " + e)
+                
+        folder_number += 1
+        
+    if fail_count == 0:
+        print("All folders look good.")
+    else:
+        print(fail_count, "folders failed validation checks")
+
+
+
 def confirm_master_folder():
     print("The current master folder is set to:" + master_folder_name)
     name = input("Hit <ENTER> to confirm, or enter a different folder name:")
@@ -338,7 +403,7 @@ def menu_line(text, w):
 
 def menu(center_number, root):
     choice = "0"
-    while choice not in "123456789":
+    while choice not in ['1','2','3','4','5','6','7','8','9','X']:
         title = "BEXLEY GRAMMAR SCHOOL Edexcel Computer Science Exam Helper"
         width = len(title)
         print()
@@ -365,11 +430,12 @@ def menu(center_number, root):
         menu_line("5. Fill student folders from master folder", width)
         menu_line("6. Create new (empty) folders for each student", width)
         menu_line("7. Delete all candidate folders", width)       
-        menu_line("8. Print all candidate solutions", width) # WIP - test only
-        menu_line("9. Quit", width)
+        menu_line("8. Print candidate solutions", width)
+        menu_line("9. Validate completed folders (after exam)", width)
+        menu_line("X. Quit", width)
         menu_line("", width)
         menu_border(width)
-        choice = input("Enter selection:")
+        choice = input("Enter selection:").upper()
     return choice
 
 def confirm_action():
@@ -467,7 +533,14 @@ while not finished:
         upper = get_number("Enter upper bound, or [Enter] for all:", default=9999) 
         print_solutions(confirm_action(), lower, upper)
 
-    elif action == "9":
+    elif action == "9": # Perform some basic validation checks on the completed folders before uploading
+        print("This will perform some basic checks on the student solution files.")
+        print("1. Is there a file for each Q")
+        print("2. Are any of the solution files identical to or significantly smaller than the master Q")
+        print("(this may indicate that the actual answer has been saved in the wrong folder)
+        check_completed()
+
+    elif action == "X":
         finished = True
 
 print("Thank you for using Exam Helper.")
